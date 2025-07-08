@@ -5,56 +5,11 @@ import math
 import os
 import json
 
-
-def load_high_score():
-    try:
-        if os.path.exists("highscore.json"):
-            with open("highscore.json", "r") as file:
-                data = json.load(file)
-                return data.get("high_score", 0)
-        return 0
-    except:
-        return 0
-
-def save_high_score(score):
-    try:
-        with open("highscore.json", "w") as file:
-            json.dump({"high_score": score}, file)
-    except:
-        print("Не удалось сохранить рекорд")
-
-# Загружаем рекорд при старте игры
-high_score = load_high_score()
-new_record_achieved = False
-
 # Initialize pygame
 pygame.mixer.init()
 pygame.mixer.fadeout(500)
 pygame.init()
 
-try:
-    # Музыка
-    menu_music = pygame.mixer.Sound("music/start_menu.mp3")  # Замените на ваш файл
-    game_music = pygame.mixer.Sound("music/game1.mp3")  # Замените на ваш файл
-    
-    # Звуковые эффекты
-    slice_sound = pygame.mixer.Sound("music/knife.mp3")  # Звук разрезания
-    bomb_explosion = pygame.mixer.Sound("music/explosion.wav")  # Звук взрыва бомбы
-    game_over_sound = pygame.mixer.Sound("music/game_over.mp3")  # Звук проигрыша
-    
-    # Настройка громкости
-    menu_music.set_volume(0.5)
-    game_music.set_volume(0.4)
-    slice_sound.set_volume(0.7)
-    bomb_explosion.set_volume(0.6)
-    game_over_sound.set_volume(0.8)
-    
-    sound_enabled = True
-except:
-    print("Не удалось загрузить звуки. Игра продолжит работу без звука.")
-    sound_enabled = False
-
-# Screen dimensions
 WIDTH, HEIGHT = 800, 600
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Fruit Ninja")
@@ -92,6 +47,59 @@ bomb_probability = 0.2  # 20% chance to spawn bomb
 
 # Physics
 GRAVITY = 0.2
+
+try:
+    background = pygame.image.load("images/background.jpg").convert()
+    background = pygame.transform.scale(background, (WIDTH, HEIGHT))
+except:
+    # Если фон не загрузился, создаем градиентный фон
+    background = pygame.Surface((WIDTH, HEIGHT))
+    for y in range(HEIGHT):
+        color = (0, 0, 100 + int(155 * y/HEIGHT))  # Синий градиент
+        pygame.draw.line(background, color, (0, y), (WIDTH, y))
+
+def load_high_score():
+    try:
+        if os.path.exists("highscore.json"):
+            with open("highscore.json", "r") as file:
+                data = json.load(file)
+                return data.get("high_score", 0)
+        return 0
+    except:
+        return 0
+
+def save_high_score(score):
+    try:
+        with open("highscore.json", "w") as file:
+            json.dump({"high_score": score}, file)
+    except:
+        print("Не удалось сохранить рекорд")
+
+# Загружаем рекорд при старте игры
+high_score = load_high_score()
+new_record_achieved = False
+
+try:
+    # Музыка
+    menu_music = pygame.mixer.Sound("music/start_menu.mp3")  # Замените на ваш файл
+    game_music = pygame.mixer.Sound("music/game1.mp3")  # Замените на ваш файл
+    
+    # Звуковые эффекты
+    slice_sound = pygame.mixer.Sound("music/knife.mp3")  # Звук разрезания
+    bomb_explosion = pygame.mixer.Sound("music/explosion.wav")  # Звук взрыва бомбы
+    game_over_sound = pygame.mixer.Sound("music/game_over.mp3")  # Звук проигрыша
+    
+    # Настройка громкости
+    menu_music.set_volume(0.5)
+    game_music.set_volume(0.4)
+    slice_sound.set_volume(0.7)
+    bomb_explosion.set_volume(0.6)
+    game_over_sound.set_volume(0.8)
+    
+    sound_enabled = True
+except:
+    print("Не удалось загрузить звуки. Игра продолжит работу без звука.")
+    sound_enabled = False
 
 class SwordTrail:
     def __init__(self):
@@ -367,7 +375,7 @@ class Bomb:
         return distance < max_cut_distance and is_between
 
 def draw_main_menu():
-    screen.fill(BLACK)
+    screen.blit(background, (0, 0))
     title = font.render("FRUIT NINJA", True, WHITE)
     start_text = font.render("Press SPACE to Start", True, WHITE)
     high_score_text = font.render(f"High Score: {high_score}", True, (200, 200, 0))
@@ -378,9 +386,16 @@ def draw_main_menu():
 
     
 def draw_game():
-    screen.fill(BLACK)
+    screen.blit(background, (0, 0))
     score_text = font.render(f"Score: {score}", True, WHITE)
-    lives_text = font.render(f"Lives: {lives}", True, WHITE)
+    screen.blit(score_text, (20, 20))
+    heart_width = images["red_lives"].get_width()
+    for i in range(3):
+        if i < lives:
+            heart_img = images["red_lives"]
+        else:
+            heart_img = images["white_lives"]
+        screen.blit(heart_img, (WIDTH - 30 - (3 - i) * (heart_width + 5), 20))
     high_score_text = font.render(f"High Score: {high_score}", True, (200, 200, 0))
 
     mouse_pos = pygame.mouse.get_pos()
@@ -395,8 +410,6 @@ def draw_game():
     knife_rect = knife_img.get_rect(center=pygame.mouse.get_pos())
     screen.blit(knife_img, knife_rect)
 
-    screen.blit(score_text, (20, 20))
-    screen.blit(lives_text, (WIDTH - lives_text.get_width() - 20, 20))
     screen.blit(high_score_text, (WIDTH//2 - high_score_text.get_width()//2, 20))
     
     for fruit in fruits:
@@ -406,7 +419,7 @@ def draw_game():
     sword_trail.draw(screen)
     
 def draw_game_over():
-    screen.fill(BLACK)
+    screen.blit(background, (0, 0))
     game_over_text = font.render("GAME OVER", True, RED)
     score_text = font.render(f"Your Score: {score}", True, WHITE)
     high_score_text = font.render(f"High Score: {high_score}", True, (200, 200, 0))
