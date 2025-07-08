@@ -181,8 +181,12 @@ images = {
     "half_orange": load_image("half_orange"),
     "half_pomegranate": load_image("half_pomegranate"),
     "red_lives": load_image("red_lives"),
-    "white_lives": load_image("white_lives")
+    "white_lives": load_image("white_lives"),
 }
+
+knife_img = load_image("knife", 0.5)  # knife.png в папке images
+knife_rect = knife_img.get_rect()
+pygame.mouse.set_visible(False)
 
 class Fruit:
     def __init__(self):
@@ -378,7 +382,19 @@ def draw_game():
     score_text = font.render(f"Score: {score}", True, WHITE)
     lives_text = font.render(f"Lives: {lives}", True, WHITE)
     high_score_text = font.render(f"High Score: {high_score}", True, (200, 200, 0))
+
+    mouse_pos = pygame.mouse.get_pos()
+    mouse_rel = pygame.mouse.get_rel()
+
+    if mouse_rel[0] != 0 or mouse_rel[1] != 0:
+        angle = math.degrees(math.atan2(-mouse_rel[1], mouse_rel[0])) - 90
+    else:
+        angle = 0
     
+    # Поворачиваем изображение ножа
+    knife_rect = knife_img.get_rect(center=pygame.mouse.get_pos())
+    screen.blit(knife_img, knife_rect)
+
     screen.blit(score_text, (20, 20))
     screen.blit(lives_text, (WIDTH - lives_text.get_width() - 20, 20))
     screen.blit(high_score_text, (WIDTH//2 - high_score_text.get_width()//2, 20))
