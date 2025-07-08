@@ -4,7 +4,30 @@ import random
 import math
 
 # Initialize pygame
+pygame.mixer.init()
 pygame.init()
+
+try:
+    # Музыка
+    menu_music = pygame.mixer.Sound("music/start_menu.mp3")  # Замените на ваш файл
+    game_music = pygame.mixer.Sound("music/game1.mp3")  # Замените на ваш файл
+    
+    # Звуковые эффекты
+    slice_sound = pygame.mixer.Sound("music/knife.mp3")  # Звук разрезания
+    bomb_explosion = pygame.mixer.Sound("music/explosion.wav")  # Звук взрыва бомбы
+    game_over_sound = pygame.mixer.Sound("music/game_over.mp3")  # Звук проигрыша
+    
+    # Настройка громкости
+    menu_music.set_volume(0.5)
+    game_music.set_volume(0.4)
+    slice_sound.set_volume(0.7)
+    bomb_explosion.set_volume(0.6)
+    game_over_sound.set_volume(0.8)
+    
+    sound_enabled = True
+except:
+    print("Не удалось загрузить звуки. Игра продолжит работу без звука.")
+    sound_enabled = False
 
 # Screen dimensions
 WIDTH, HEIGHT = 800, 600
@@ -241,6 +264,9 @@ class Bomb:
         return dist <= self.radius
 
 def draw_main_menu():
+    if sound_enabled and game_state == MENU:
+        if not pygame.mixer.get_busy():  # Если музыка не играет
+            menu_music.play(-1)
     screen.fill(BLACK)
     title = font.render("FRUIT NINJA", True, WHITE)
     start_text = font.render("Press SPACE to Start", True, WHITE)
@@ -272,12 +298,16 @@ def draw_game_over():
     screen.blit(final_score, (WIDTH//2 - final_score.get_width()//2, HEIGHT//2))
     screen.blit(restart_text, (WIDTH//2 - restart_text.get_width()//2, HEIGHT*2//3))
 
+    pass
+
 def reset_game():
     global score, lives, fruits, bombs
     score = 0
     lives = 3
     fruits = []
     bombs = []
+    if sound_enabled:
+        pygame.mixer.stop()
 
 # Main game loop
 running = True
@@ -291,9 +321,14 @@ while running:
                 if game_state == MENU:
                     game_state = PLAYING
                     reset_game()
+                    if sound_enabled:
+                        menu_music.stop()
+                        game_music.play(-1)  # -1 означает зацикливание
                 elif game_state == GAME_OVER:
                     game_state = PLAYING
                     reset_game()
+                    if sound_enabled:
+                        game_music.play(-1)
     
     if game_state == PLAYING:
         current_pos = pygame.mouse.get_pos()
@@ -308,6 +343,8 @@ while running:
                         fruit.sliced = True
                         fruit.slice_time = pygame.time.get_ticks()
                         score += 1
+                        if sound_enabled:
+                            slice_sound.play()
                 
                 # Check bomb slices
                 for bomb in bombs[:]:
@@ -315,8 +352,13 @@ while running:
                         bomb.sliced = True
                         bomb.slice_time = pygame.time.get_ticks()
                         lives -= 1
+                        if sound_enabled:
+                            bomb_explosion.play()
                         if lives <= 0:
                             game_state = GAME_OVER
+                            if sound_enabled:
+                                game_music.stop()
+                                game_over_sound.play()
         else:
             sword_trail.add_point(current_pos)
 
