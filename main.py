@@ -2,6 +2,30 @@ import pygame
 import sys
 import random
 import math
+import os
+import json
+
+
+def load_high_score():
+    try:
+        if os.path.exists("highscore.json"):
+            with open("highscore.json", "r") as file:
+                data = json.load(file)
+                return data.get("high_score", 0)
+        return 0
+    except:
+        return 0
+
+def save_high_score(score):
+    try:
+        with open("highscore.json", "w") as file:
+            json.dump({"high_score": score}, file)
+    except:
+        print("Не удалось сохранить рекорд")
+
+# Загружаем рекорд при старте игры
+high_score = load_high_score()
+new_record_achieved = False
 
 # Initialize pygame
 pygame.mixer.init()
@@ -192,13 +216,13 @@ class Fruit:
                 self.speed_x *= -0.8
         else:
             # Обновляем положение половинок
-            for piece in self.sliced_pieces:
-                piece['speed_y'] += GRAVITY * 0.8  # Чуть медленнее чем целый фрукт
+            for piece in self.sliced_pieces[:]:  # Используем копию списка для безопасного удаления
+                piece['speed_y'] += GRAVITY
                 piece['x'] += piece['speed_x']
                 piece['y'] += piece['speed_y']
                 piece['rotation'] += piece['rotation_speed']
                 
-                # Удаляем половинки, упавшие за экран
+                # Удаляем половинки, которые ушли за нижнюю границу
                 if piece['y'] > HEIGHT + 100:
                     self.sliced_pieces.remove(piece)
     def slice(self):
@@ -219,8 +243,8 @@ class Fruit:
             {
                 'x': self.x,
                 'y': self.y,
-                'speed_x': random.uniform(2, 5),   # Правая половинка летит вправо
-                'speed_y': random.uniform(-2, 1),
+                'speed_x': random.uniform(2, 5),  # Левая половинка летит влево
+                'speed_y': random.uniform(-2, 1),  # Немного вверх
                 'image': pygame.transform.flip(self.sliced_image, True, False),
                 'rotation': 0,
                 'rotation_speed': random.uniform(-5, 5)
@@ -241,7 +265,7 @@ class Fruit:
         if not self.sliced:
             return self.y > HEIGHT + 100
         else:
-            # Фрукт считается ушедшим, когда все половинки упали
+            # Фрукт считается ушедшим, когда все половинки провалились за экран
             return len(self.sliced_pieces) == 0
         
     def is_sliced(self, pos1, pos2):
@@ -339,51 +363,60 @@ class Bomb:
         return distance < max_cut_distance and is_between
 
 def draw_main_menu():
-    if sound_enabled and game_state == MENU:
-        if not pygame.mixer.get_busy():  # Если музыка не играет
-            menu_music.play(-1)
     screen.fill(BLACK)
     title = font.render("FRUIT NINJA", True, WHITE)
     start_text = font.render("Press SPACE to Start", True, WHITE)
+    high_score_text = font.render(f"High Score: {high_score}", True, (200, 200, 0))
+    
     screen.blit(title, (WIDTH//2 - title.get_width()//2, HEIGHT//3))
     screen.blit(start_text, (WIDTH//2 - start_text.get_width()//2, HEIGHT//2))
+    screen.blit(high_score_text, (WIDTH//2 - high_score_text.get_width()//2, HEIGHT//2 + 50))
+
     
 def draw_game():
     screen.fill(BLACK)
     score_text = font.render(f"Score: {score}", True, WHITE)
     lives_text = font.render(f"Lives: {lives}", True, WHITE)
+    high_score_text = font.render(f"High Score: {high_score}", True, (200, 200, 0))
+    
     screen.blit(score_text, (20, 20))
     screen.blit(lives_text, (WIDTH - lives_text.get_width() - 20, 20))
+    screen.blit(high_score_text, (WIDTH//2 - high_score_text.get_width()//2, 20))
     
     for fruit in fruits:
         fruit.draw()
-    
     for bomb in bombs:
         bomb.draw()
-    
     sword_trail.draw(screen)
     
 def draw_game_over():
     screen.fill(BLACK)
     game_over_text = font.render("GAME OVER", True, RED)
-    final_score = font.render(f"Final Score: {score}", True, WHITE)
+    score_text = font.render(f"Your Score: {score}", True, WHITE)
+    high_score_text = font.render(f"High Score: {high_score}", True, (200, 200, 0))
     restart_text = font.render("Press SPACE to Play Again", True, WHITE)
     
     screen.blit(game_over_text, (WIDTH//2 - game_over_text.get_width()//2, HEIGHT//3))
-    screen.blit(final_score, (WIDTH//2 - final_score.get_width()//2, HEIGHT//2))
+    screen.blit(score_text, (WIDTH//2 - score_text.get_width()//2, HEIGHT//2))
+    screen.blit(high_score_text, (WIDTH//2 - high_score_text.get_width()//2, HEIGHT//2 + 50))
     screen.blit(restart_text, (WIDTH//2 - restart_text.get_width()//2, HEIGHT*2//3))
-
-    pass
+    
+    if new_record_achieved:
+        record_text = font_large.render("NEW RECORD!", True, (0, 255, 0))
+        screen.blit(record_text, (WIDTH//2 - record_text.get_width()//2, HEIGHT//2 + 100))
 
 def reset_game():
-    global score, lives, fruits, bombs
+    global score, lives, fruits, bombs, new_record_achieved
     score = 0
     lives = 3
     fruits = []
     bombs = []
+    new_record_achieved = False
     if sound_enabled:
         pygame.mixer.stop()
 
+
+font_large = pygame.font.SysFont('Arial', 48)  # Для надписи NEW RECORD!
 # Main game loop
 running = True
 while running:
@@ -430,6 +463,10 @@ while running:
                             bomb_explosion.play()
                         if lives <= 0:
                             game_state = GAME_OVER
+                            if score > high_score:
+                                high_score = score
+                                new_record_achieved = True
+                                save_high_score(high_score)
                             if sound_enabled:
                                 game_music.stop()
                                 game_over_sound.play()
@@ -450,12 +487,17 @@ while running:
         for fruit in fruits[:]:
             fruit.update()
             if fruit.is_off_screen():
-                if not fruit.sliced:
+                if not fruit.sliced:  # Если целый фрукт ушел за экран
                     lives -= 1
                     if lives <= 0:
                         game_state = GAME_OVER
-                fruits.remove(fruit)
-            elif fruit.sliced and pygame.time.get_ticks() - fruit.slice_time > 500:
+                        if score > high_score:
+                            high_score = score
+                            new_record_achieved = True
+                            save_high_score(high_score)
+                        if sound_enabled:
+                            game_music.stop()
+                            game_over_sound.play()
                 fruits.remove(fruit)
         
         # Update bombs
