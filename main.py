@@ -384,13 +384,13 @@ class Bomb:
 
 def draw_main_menu():
     screen.blit(background, (0, 0))
-    title = font.render("FRUIT NINJA", True, WHITE)
+    title = font_large.render("VEGGIE SLASH", True, RED)
     start_text = font.render("Press SPACE to Start", True, WHITE)
-    high_score_text = font.render(f"High Score: {high_score}", True, (200, 200, 0))
+    high_score_text = font.render(f"High Score: {high_score}", True, (75, 218, 246))
     
-    screen.blit(title, (WIDTH//2 - title.get_width()//2, HEIGHT//3))
-    screen.blit(start_text, (WIDTH//2 - start_text.get_width()//2, HEIGHT//2))
-    screen.blit(high_score_text, (WIDTH//2 - high_score_text.get_width()//2, HEIGHT//2 + 50))
+    screen.blit(title, (WIDTH//2 - title.get_width()//2, HEIGHT//3+50))
+    screen.blit(high_score_text, (WIDTH//2 - high_score_text.get_width()//2, HEIGHT//2 + 20))
+    screen.blit(start_text, (WIDTH//2 - start_text.get_width()//2, HEIGHT-80))
 
     
 def draw_game():
@@ -428,7 +428,7 @@ def draw_game():
     
 def draw_game_over():
     screen.blit(background, (0, 0))
-    game_over_text = font.render("GAME OVER", True, RED)
+    game_over_text = font_large.render("GAME OVER", True, RED)
     score_text = font.render(f"Your Score: {score}", True, WHITE)
     high_score_text = font.render(f"High Score: {high_score}", True, (200, 200, 0))
     restart_text = font.render("Press SPACE to Play Again", True, WHITE)
@@ -440,7 +440,7 @@ def draw_game_over():
     
     if new_record_achieved:
         record_text = font_large.render("NEW RECORD!", True, (0, 255, 0))
-        screen.blit(record_text, (WIDTH//2 - record_text.get_width()//2, HEIGHT//2 + 100))
+        screen.blit(record_text, (WIDTH//2 - record_text.get_width()//2, HEIGHT//2 + 200))
 
 def reset_game():
     global score, lives, fruits, bombs, new_record_achieved
@@ -545,6 +545,7 @@ while running:
     
     if game_state == MENU:
         draw_main_menu()
+        menu_music.play(-1)
     elif game_state == PLAYING:
         draw_game()
     elif game_state == GAME_OVER:
