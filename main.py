@@ -33,8 +33,16 @@ GAME_OVER = 2
 game_state = MENU
 score = 0
 lives = 3
-font = pygame.font.SysFont('Arial', 32)
 clock = pygame.time.Clock()
+
+try:
+    # Укажите правильный путь к вашему файлу шрифта
+    font = pygame.font.Font("Monoton-Regular.ttf", 32)
+    font_large = pygame.font.Font("Monoton-Regular.ttf", 48)
+except:
+    print("Не удалось загрузить кастомный шрифт. Будет использован стандартный.")
+    font = pygame.font.SysFont('Arial', 32)
+    font_large = pygame.font.SysFont('Arial', 48)
 
 # Objects
 fruits = []
@@ -444,8 +452,6 @@ def reset_game():
     if sound_enabled:
         pygame.mixer.stop()
 
-
-font_large = pygame.font.SysFont('Arial', 48)  # Для надписи NEW RECORD!
 # Main game loop
 running = True
 while running:
