@@ -5,6 +5,7 @@ import math
 
 # Initialize pygame
 pygame.mixer.init()
+pygame.mixer.fadeout(500)
 pygame.init()
 
 try:
@@ -128,79 +129,159 @@ class SwordTrail:
 
 sword_trail = SwordTrail()
 
+def load_image(name, scale=1.0):
+    try:
+        image = pygame.image.load(f"images/{name}.png").convert_alpha()
+        if scale != 1.0:
+            new_size = (int(image.get_width() * scale), int(image.get_height() * scale))
+            image = pygame.transform.scale(image, new_size)
+        return image
+    except:
+        print(f"Не удалось загрузить изображение: {name}")
+        # Создаем заглушку если изображение не найдено
+        surf = pygame.Surface((50, 50), pygame.SRCALPHA)
+        pygame.draw.circle(surf, RED, (25, 25), 25)
+        return surf
+
+
+# Загрузка всех изображений
+images = {
+    "guava": load_image("guava"),
+    "melon": load_image("melon"),
+    "orange": load_image("orange"),
+    "pomegranate": load_image("pomegranate"),
+    "bomb": load_image("bomb"),
+    "explosion": load_image("explosion"),
+    "half_guava": load_image("half_guava"),
+    "half_melon": load_image("half_melon"),
+    "half_orange": load_image("half_orange"),
+    "half_pomegranate": load_image("half_pomegranate"),
+    "red_lives": load_image("red_lives"),
+    "white_lives": load_image("white_lives")
+}
+
 class Fruit:
     def __init__(self):
-        self.x = random.randint(fruit_radius, WIDTH - fruit_radius)
-        self.y = HEIGHT + fruit_radius
-        self.color = random.choice(fruit_colors)
-        self.radius = fruit_radius
+        self.x = random.randint(50, WIDTH - 50)
+        self.y = HEIGHT + 50
+        self.type = random.choice(["guava", "melon", "pomegranate"])
+        self.image = images[self.type]
+        self.rect = self.image.get_rect(center=(self.x, self.y))
         self.speed_y = random.uniform(-15, -10)
         self.speed_x = random.uniform(-3, 3)
         self.sliced = False
         self.slice_time = 0
+        self.sliced_image = images[f"half_{self.type}"]
+        self.left_half = None
+        self.right_half = None
+        self.sliced_pieces = []  # Храним половинки фруктов
         
     def update(self):
-        self.speed_y += GRAVITY
-        self.y += self.speed_y
-        self.x += self.speed_x
-        
-        if self.x - self.radius < 0:
-            self.x = self.radius
-            self.speed_x *= -0.8
+        if not self.sliced:
+            # Обычное движение целого фрукта
+            self.speed_y += GRAVITY
+            self.y += self.speed_y
+            self.x += self.speed_x
+            self.rect.center = (self.x, self.y)
             
-        if self.x + self.radius > WIDTH:
-            self.x = WIDTH - self.radius
-            self.speed_x *= -0.8
+            if self.x < 50:
+                self.x = 50
+                self.speed_x *= -0.8
+            elif self.x > WIDTH - 50:
+                self.x = WIDTH - 50
+                self.speed_x *= -0.8
+        else:
+            # Обновляем положение половинок
+            for piece in self.sliced_pieces:
+                piece['speed_y'] += GRAVITY * 0.8  # Чуть медленнее чем целый фрукт
+                piece['x'] += piece['speed_x']
+                piece['y'] += piece['speed_y']
+                piece['rotation'] += piece['rotation_speed']
+                
+                # Удаляем половинки, упавшие за экран
+                if piece['y'] > HEIGHT + 100:
+                    self.sliced_pieces.remove(piece)
+    def slice(self):
+        self.sliced = True
+        self.slice_time = pygame.time.get_ticks()
+        
+        # Создаем две половинки с разной физикой
+        self.sliced_pieces = [
+            {
+                'x': self.x,
+                'y': self.y,
+                'speed_x': random.uniform(-5, -2),  # Левая половинка летит влево
+                'speed_y': random.uniform(-2, 1),  # Немного вверх
+                'image': self.sliced_image,
+                'rotation': 0,
+                'rotation_speed': random.uniform(-5, 5)
+            },
+            {
+                'x': self.x,
+                'y': self.y,
+                'speed_x': random.uniform(2, 5),   # Правая половинка летит вправо
+                'speed_y': random.uniform(-2, 1),
+                'image': pygame.transform.flip(self.sliced_image, True, False),
+                'rotation': 0,
+                'rotation_speed': random.uniform(-5, 5)
+            }
+        ]
             
     def draw(self):
         if not self.sliced:
-            pygame.draw.circle(screen, self.color, (int(self.x), int(self.y)), self.radius)
-            pygame.draw.circle(screen, WHITE, (int(self.x - self.radius/3), int(self.y - self.radius/3)), self.radius//4)
+            screen.blit(self.image, self.rect)
         else:
-            pygame.draw.circle(screen, self.color, (int(self.x - 10), int(self.y)), self.radius//2)
-            pygame.draw.circle(screen, self.color, (int(self.x + 10), int(self.y)), self.radius//2)
+            # Рисуем все половинки
+            for piece in self.sliced_pieces:
+                rotated_img = pygame.transform.rotate(piece['image'], piece['rotation'])
+                new_rect = rotated_img.get_rect(center=(piece['x'], piece['y']))
+                screen.blit(rotated_img, new_rect)
             
     def is_off_screen(self):
-        return self.y > HEIGHT + self.radius
+        if not self.sliced:
+            return self.y > HEIGHT + 100
+        else:
+            # Фрукт считается ушедшим, когда все половинки упали
+            return len(self.sliced_pieces) == 0
         
     def is_sliced(self, pos1, pos2):
         if self.sliced:
             return False
             
-        x1, y1 = pos1
-        x2, y2 = pos2
-        dx = self.x - x1
-        dy = self.y - y1
-        lx = x2 - x1
-        ly = y2 - y1
-        dot = dx * lx + dy * ly
-        len_sq = lx * lx + ly * ly
+        # Проверяем расстояние до центра фрукта
+        fruit_pos = pygame.math.Vector2(self.x, self.y)
+        line_start = pygame.math.Vector2(pos1)
+        line_end = pygame.math.Vector2(pos2)
         
-        if len_sq != 0:
-            param = dot / len_sq
-        else:
-            param = -1
+        # Максимальное расстояние для разрезания (чуть больше радиуса)
+        max_cut_distance = max(self.rect.width, self.rect.height) * 0.7
+        
+        # Проверяем расстояние от центра до линии
+        line_vec = line_end - line_start
+        line_length = line_vec.length()
+        if line_length == 0:
+            return False
             
-        if param < 0:
-            xx = x1
-            yy = y1
-        elif param > 1:
-            xx = x2
-            yy = y2
-        else:
-            xx = x1 + param * lx
-            yy = y1 + param * ly
-            
-        dist = math.sqrt((self.x - xx)**2 + (self.y - yy)**2)
-        return dist <= self.radius
+        line_unit = line_vec.normalize()
+        to_center = fruit_pos - line_start
+        projection = to_center.dot(line_unit)
+        projection = max(0, min(line_length, projection))
+        closest_point = line_start + line_unit * projection
+        distance = (fruit_pos - closest_point).length()
+        
+        # Дополнительная проверка - точка должна быть между началом и концом линии
+        is_between = (0 <= projection <= line_length)
+        
+        return distance < max_cut_distance and is_between
 
 class Bomb:
     def __init__(self):
-        self.x = random.randint(fruit_radius, WIDTH - fruit_radius)
-        self.y = HEIGHT + fruit_radius
-        self.radius = fruit_radius
-        self.speed_y = random.uniform(-15, -10)
-        self.speed_x = random.uniform(-3, 3)
+        self.x = random.randint(50, WIDTH - 50)
+        self.y = HEIGHT + 50
+        self.image = images["bomb"]
+        self.rect = self.image.get_rect(center=(self.x, self.y))
+        self.speed_y = random.uniform(-12, -8)
+        self.speed_x = random.uniform(-2, 2)
         self.sliced = False
         self.slice_time = 0
         
@@ -208,60 +289,54 @@ class Bomb:
         self.speed_y += GRAVITY
         self.y += self.speed_y
         self.x += self.speed_x
+        self.rect.center = (self.x, self.y)
         
-        if self.x - self.radius < 0:
-            self.x = self.radius
-            self.speed_x *= -0.8
-            
-        if self.x + self.radius > WIDTH:
-            self.x = WIDTH - self.radius
-            self.speed_x *= -0.8
+        if self.x < 50:
+            self.x = 50
+            self.speed_x *= -0.7
+        elif self.x > WIDTH - 50:
+            self.x = WIDTH - 50
+            self.speed_x *= -0.7
             
     def draw(self):
         if not self.sliced:
-            pygame.draw.circle(screen, DARK_GRAY, (int(self.x), int(self.y)), self.radius)
-            pygame.draw.circle(screen, RED, (int(self.x), int(self.y)), self.radius//2)
-            # Фитиль
-            pygame.draw.line(screen, ORANGE, (self.x, self.y - self.radius), 
-                            (self.x, self.y - self.radius - 10), 2)
+            screen.blit(self.image, self.rect)
         else:
-            # Взрыв
-            pygame.draw.circle(screen, ORANGE, (int(self.x), int(self.y)), self.radius + 10)
-            pygame.draw.circle(screen, RED, (int(self.x), int(self.y)), self.radius + 5)
+            # Анимация взрыва
+            explosion_img = images["explosion"]
+            screen.blit(explosion_img, 
+                       (self.x - explosion_img.get_width()//2, 
+                        self.y - explosion_img.get_height()//2))
             
     def is_off_screen(self):
-        return self.y > HEIGHT + self.radius
+        return self.y > HEIGHT + 100
         
     def is_sliced(self, pos1, pos2):
         if self.sliced:
             return False
             
-        x1, y1 = pos1
-        x2, y2 = pos2
-        dx = self.x - x1
-        dy = self.y - y1
-        lx = x2 - x1
-        ly = y2 - y1
-        dot = dx * lx + dy * ly
-        len_sq = lx * lx + ly * ly
+        # Аналогичная проверка как для фруктов
+        bomb_pos = pygame.math.Vector2(self.x, self.y)
+        line_start = pygame.math.Vector2(pos1)
+        line_end = pygame.math.Vector2(pos2)
         
-        if len_sq != 0:
-            param = dot / len_sq
-        else:
-            param = -1
+        max_cut_distance = max(self.rect.width, self.rect.height) * 0.7
+        
+        line_vec = line_end - line_start
+        line_length = line_vec.length()
+        if line_length == 0:
+            return False
             
-        if param < 0:
-            xx = x1
-            yy = y1
-        elif param > 1:
-            xx = x2
-            yy = y2
-        else:
-            xx = x1 + param * lx
-            yy = y1 + param * ly
-            
-        dist = math.sqrt((self.x - xx)**2 + (self.y - yy)**2)
-        return dist <= self.radius
+        line_unit = line_vec.normalize()
+        to_center = bomb_pos - line_start
+        projection = to_center.dot(line_unit)
+        projection = max(0, min(line_length, projection))
+        closest_point = line_start + line_unit * projection
+        distance = (bomb_pos - closest_point).length()
+        
+        is_between = (0 <= projection <= line_length)
+        
+        return distance < max_cut_distance and is_between
 
 def draw_main_menu():
     if sound_enabled and game_state == MENU:
@@ -339,9 +414,8 @@ while running:
                 
                 # Check fruit slices
                 for fruit in fruits[:]:
-                    if fruit.is_sliced(last_pos, current_pos):
-                        fruit.sliced = True
-                        fruit.slice_time = pygame.time.get_ticks()
+                    if fruit.is_sliced(last_pos, current_pos) and not fruit.sliced:
+                        fruit.slice()  # Вместо fruit.sliced = True
                         score += 1
                         if sound_enabled:
                             slice_sound.play()
