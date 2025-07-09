@@ -5,7 +5,7 @@ from game import FruitNinjaGame
 
 def main():
     pygame.init()
-    pygame.display.set_caption("Veggie Slash")
+    pygame.display.set_caption("Veggie Slush")
     screen = pygame.display.set_mode((WIDTH, HEIGHT))
     icon = pygame.image.load("images/icon.ico")  # или "icon.png"
     pygame.display.set_icon(icon)

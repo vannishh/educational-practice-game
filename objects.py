@@ -42,7 +42,7 @@ class Fruit:
     def __init__(self, images):
         self.x = random.randint(50, WIDTH - 50)
         self.y = HEIGHT + 50
-        self.type = random.choice(["guava", "melon", "pomegranate"])
+        self.type = random.choice(["item_1", "item_2", "item_3", "item_4"])
         self.image = images[self.type]
         self.rect = self.image.get_rect(center=(self.x, self.y))
         self.speed_y = random.uniform(-15, -10)

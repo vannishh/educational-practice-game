@@ -134,7 +134,7 @@ class FruitNinjaGame:
 
     def _draw_menu(self):
         self.screen.blit(self.background, (0, 0))
-        title = self.font_large.render("VEGGIE SLASH", True, RED)
+        title = self.font_large.render("VEGGIE SLUSH", True, RED)
         prompt = self.font.render("Press SPACE to Start", True, WHITE)
         hi_score = self.font.render(f"High Score: {self.high_score}", True, (75, 218, 246))
         self.screen.blit(title, (WIDTH // 2 - title.get_width() // 2, HEIGHT // 3 + 50))

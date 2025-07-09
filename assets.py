@@ -64,9 +64,9 @@ def load_fonts():
 
 def load_all_images():
     names = [
-        "guava", "melon", "orange", "pomegranate",
+        "item_1", "item_2", "item_3", "item_4",
         "bomb", "explosion",
-        "half_guava", "half_melon", "half_orange", "half_pomegranate",
+        "half_item_1", "half_item_2", "half_item_3", "half_item_4",
         "red_lives", "white_lives", "knife"
     ]
     return {name: load_image(name) for name in names}
