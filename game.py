@@ -174,6 +174,11 @@ class FruitNinjaGame:
     def _draw_game_over(self):
         self.screen.blit(self.background, (0, 0))
         game_over = self.font_large.render("GAME OVER", True, RED)
+        logo_img = pygame.image.load("images/game_over.png").convert_alpha()
+        logo_img = pygame.transform.scale(logo_img, (150, 150))
+    
+        logo_rect = logo_img.get_rect(center=(WIDTH//2, HEIGHT//4-50))
+        self.screen.blit(logo_img, logo_rect)
         score_text = self.font.render(f"Your Score: {self.score}", True, WHITE)
         hi_score = self.font.render(f"High Score: {self.high_score}", True, (200, 200, 0))
         prompt = self.font.render("Press SPACE to Play Again", True, WHITE)
@@ -181,7 +186,7 @@ class FruitNinjaGame:
         self.screen.blit(game_over, (WIDTH // 2 - game_over.get_width() // 2, HEIGHT // 3))
         self.screen.blit(score_text, (WIDTH // 2 - score_text.get_width() // 2, HEIGHT // 2))
         self.screen.blit(hi_score, (WIDTH // 2 - hi_score.get_width() // 2, HEIGHT // 2 + 50))
-        self.screen.blit(prompt, (WIDTH // 2 - prompt.get_width() // 2, HEIGHT * 2 // 3))
+        self.screen.blit(prompt, (WIDTH // 2 - prompt.get_width() // 2, HEIGHT-80))
         if self.new_record:
             record = self.font_large.render("NEW RECORD!", True, (0, 255, 0))
             self.screen.blit(record, (WIDTH // 2 - record.get_width() // 2, HEIGHT // 2 + 150))
