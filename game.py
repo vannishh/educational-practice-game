@@ -134,15 +134,11 @@ class FruitNinjaGame:
 
     def _draw_menu(self):
         self.screen.blit(self.background, (0, 0))
+        logo_img = pygame.image.load("images/title.png").convert_alpha()
+        logo_img = pygame.transform.scale(logo_img, (500, 500))
     
-    # Загрузка логотипа (добавьте в метод __init__)
-        if not hasattr(self, 'logo_img'):
-            self.logo_img = pygame.image.load("images/title.png").convert_alpha()
-            self.logo_img = pygame.transform.scale(self.logo_img, (500, 500))
-    
-    # Отображение логотипа вместо текста
-        logo_rect = self.logo_img.get_rect(center=(WIDTH//2, HEIGHT//3))
-        self.screen.blit(self.logo_img, logo_rect)
+        logo_rect = logo_img.get_rect(center=(WIDTH//2, HEIGHT//3))
+        self.screen.blit(logo_img, logo_rect)
     
     # Остальные элементы меню
         prompt = self.font.render("Press SPACE to Start", True, WHITE)
