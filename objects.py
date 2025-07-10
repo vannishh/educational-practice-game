@@ -158,5 +158,6 @@ def _check_slice(x, y, rect, pos1, pos2):
     projection = max(0, min(line_length, to_center.dot(line_unit)))
     closest = line_start + line_unit * projection
     distance = (center - closest).length()
-    max_distance = max(rect.width, rect.height) * 0.7
+    # Уменьшаем зону обнаружения (было 0.7, можно сделать 0.5 или меньше)
+    max_distance = max(rect.width, rect.height) * 0.3  # 🔹 Измените этот множитель!
     return distance < max_distance and (0 <= projection <= line_length)

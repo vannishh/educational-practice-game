@@ -26,7 +26,7 @@ BOMB_PROBABILITY = 0.2
 SPAWN_RATE_INITIAL = 60
 
 # Путь к ресурсам
-FONT_PATH = "resources/Monoton-Regular.ttf"
+FONT_PATH = "resources/WinkySans-VariableFont_wght.ttf"
 HIGHSCORE_FILE = "resources/highscore.json"
 
 # Состояния игры

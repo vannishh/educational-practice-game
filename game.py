@@ -134,12 +134,22 @@ class FruitNinjaGame:
 
     def _draw_menu(self):
         self.screen.blit(self.background, (0, 0))
-        title = self.font_large.render("VEGGIE SLUSH", True, RED)
+    
+    # Загрузка логотипа (добавьте в метод __init__)
+        if not hasattr(self, 'logo_img'):
+            self.logo_img = pygame.image.load("images/title.png").convert_alpha()
+            self.logo_img = pygame.transform.scale(self.logo_img, (500, 500))
+    
+    # Отображение логотипа вместо текста
+        logo_rect = self.logo_img.get_rect(center=(WIDTH//2, HEIGHT//3))
+        self.screen.blit(self.logo_img, logo_rect)
+    
+    # Остальные элементы меню
         prompt = self.font.render("Press SPACE to Start", True, WHITE)
         hi_score = self.font.render(f"High Score: {self.high_score}", True, (75, 218, 246))
-        self.screen.blit(title, (WIDTH // 2 - title.get_width() // 2, HEIGHT // 3 + 50))
-        self.screen.blit(hi_score, (WIDTH // 2 - hi_score.get_width() // 2, HEIGHT // 2 + 20))
-        self.screen.blit(prompt, (WIDTH // 2 - prompt.get_width() // 2, HEIGHT - 80))
+        self.screen.blit(hi_score, (WIDTH//2 - hi_score.get_width()//2, HEIGHT//2 + 20))
+        self.screen.blit(prompt, (WIDTH//2 - prompt.get_width()//2, HEIGHT - 80))
+    
         if self.sounds['enabled']:
             self.sounds['menu_music'].play(-1)
 
